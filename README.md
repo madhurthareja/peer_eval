@@ -181,6 +181,73 @@ services:
 
 ---
 
+## 🛠️ Setting Up PostgreSQL Locally
+
+If you don’t have PostgreSQL installed, follow these steps:
+
+### 1. **Install PostgreSQL**
+
+- **macOS:**  
+  ```bash
+  brew install postgresql
+  brew services start postgresql
+  ```
+- **Ubuntu/Linux:**  
+  ```bash
+  sudo apt update
+  sudo apt install postgresql postgresql-contrib
+  sudo service postgresql start
+  ```
+- **Windows:**  
+  Download and install from [https://www.postgresql.org/download/windows/](https://www.postgresql.org/download/windows/)
+
+### 2. **Create a Database and User**
+
+Open a terminal and enter the PostgreSQL shell:
+
+```bash
+psql postgres
+```
+Or, if you get a "command not found" error, try:
+```bash
+sudo -u postgres psql
+```
+
+Then run the following commands (replace `peer_eval_db`, `your_db_user`, and `your_db_password` with your own values):
+
+```sql
+CREATE DATABASE peer_eval_db;
+CREATE USER your_db_user WITH PASSWORD 'your_db_password';
+ALTER ROLE your_db_user SET client_encoding TO 'utf8';
+ALTER ROLE your_db_user SET default_transaction_isolation TO 'read committed';
+ALTER ROLE your_db_user SET timezone TO 'UTC';
+GRANT ALL PRIVILEGES ON DATABASE peer_eval_db TO your_db_user;
+\q
+```
+
+### 3. **Update Your Django Settings**
+
+In `peer_eval/settings.py`, update the `DATABASES` section:
+
+```python
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'peer_eval_db',
+        'USER': 'your_db_user',
+        'PASSWORD': 'your_db_password',
+        'HOST': 'localhost',
+        'PORT': '5432',
+    }
+}
+```
+
+---
+
+Now you can continue with migrations and running the server as described above!
+
+---
+
 ## 🤝 Contributing
 
 Feel free to fork and submit pull requests!
