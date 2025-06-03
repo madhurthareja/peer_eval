@@ -9,7 +9,7 @@ Follow the instructions below to set up, configure, and deploy the project.
 
 You can watch a demo of the project here:
 
-[![Watch the demo]](https://youtu.be/6OE4hhoTwdg)
+[Watch the demo](https://youtu.be/6OE4hhoTwdg)
 
 ### 1. **Clone the Repository**
 
