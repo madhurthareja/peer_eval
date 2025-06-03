@@ -1,0 +1,9 @@
+psycopg2-binary>=2.9.9
+django
+numpy
+pandas
+gunicorn
+dj-database-url
+django-environ
+boto3
+django-storages

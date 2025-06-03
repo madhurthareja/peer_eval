@@ -1,0 +1,259 @@
+{% extends "evaluation/base.html" %}
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">Edit Peer Review Template</h2>
+            <p class="text-muted mb-0">For: {{ assignment.title }} ({{ assignment.course.name }})</p>
+        </div>
+        <a href="{% url 'peer_review_dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+        {% csrf_token %}
+        
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title mb-3">
+                    <i class="bi bi-gear me-2"></i>Template Settings
+                </h5>
+                
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            {{ template_form.enable_peer_review }}
+                            <label class="form-check-label" for="{{ template_form.enable_peer_review.id_for_label }}">
+                                Enable Peer Review
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ template_form.copies_per_student.id_for_label }}" class="form-label">
+                            Reviews Per Student
+                        </label>
+                        {{ template_form.copies_per_student }}
+                    </div>
+                </div>
+                
+                <div class="mt-4">
+                    <label for="{{ template_form.rubric_pdf.id_for_label }}" class="form-label">
+                        Rubric PDF (Optional)
+                    </label>
+                    <div class="input-group">
+                        {{ template_form.rubric_pdf }}
+                    </div>
+                    {% if template_form.instance.rubric_pdf %}
+                    <div class="mt-2">
+                        <a href="{{ template_form.instance.rubric_pdf.url }}" target="_blank" class="btn btn-sm btn-outline-primary">
+                            <i class="bi bi-eye me-1"></i> View Current Rubric
+                        </a>
+                        <small class="text-muted ms-2">Upload new file to replace</small>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center mb-3">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-question-circle me-2"></i>Review Questions
+                    </h5>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="add-question">
+                        <i class="bi bi-plus-lg me-1"></i> Add Question
+                    </button>
+                </div>
+                
+                {{ question_formset.management_form }}
+                <div class="questions-container" id="questions-container">
+                    {% for form in question_formset %}
+                    <div class="question-card card mb-3 p-3 position-relative">
+                        <div class="question-header d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0">Question {{ forloop.counter }}</h6>
+                            {% if form.DELETE %}
+                            <div class="form-check form-switch">
+                                <label class="form-check-label text-danger" for="{{ form.DELETE.id_for_label }}">
+                                    Delete Question
+                                </label>
+                                {{ form.DELETE }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.text.id_for_label }}" class="form-label">Question Text</label>
+                            {{ form.text }}
+                            <div class="form-text">What students will see when reviewing</div>
+                        </div>
+                        
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="{{ form.max_marks.id_for_label }}" class="form-label">Maximum Points</label>
+                                {{ form.max_marks }}
+                            </div>
+                            <div class="col-md-8">
+                                <label for="{{ form.rubric.id_for_label }}" class="form-label">Scoring Rubric</label>
+                                {{ form.rubric }}
+                                <div class="form-text">Guidance for reviewers</div>
+                            </div>
+                        </div>
+                        
+                        {% if form.errors %}
+                        <div class="alert alert-danger mt-3">
+                            {% for field, errors in form.errors.items %}
+                                {% if field != 'DELETE' %}
+                                    {% for error in errors %}
+                                        <div>{{ error }}</div>
+                                    {% endfor %}
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        {{ form.id }}
+                    </div>
+                    {% endfor %}
+                </div>
+
+                <div id="empty-form" class="d-none">
+                    {% with form=question_formset.empty_form %}
+                    <div class="question-card card mb-3 p-3 position-relative">
+                        <div class="question-header d-flex justify-content-between align-items-center mb-3">
+                            <h6 class="mb-0">Question __num__</h6>
+                            {% if form.DELETE %}
+                            <div class="form-check form-switch">
+                                <label class="form-check-label text-danger" for="{{ form.DELETE.id_for_label }}">
+                                    Delete Question
+                                </label>
+                                {{ form.DELETE }}
+                            </div>
+                            {% endif %}
+                        </div>
+                        <div class="mb-3">
+                            <label for="{{ form.text.id_for_label }}" class="form-label">Question Text</label>
+                            {{ form.text }}
+                            <div class="form-text">What students will see when reviewing</div>
+                        </div>
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label for="{{ form.max_marks.id_for_label }}" class="form-label">Maximum Points</label>
+                                {{ form.max_marks }}
+                            </div>
+                            <div class="col-md-8">
+                                <label for="{{ form.rubric.id_for_label }}" class="form-label">Scoring Rubric</label>
+                                {{ form.rubric }}
+                                <div class="form-text">Guidance for reviewers</div>
+                            </div>
+                        </div>
+                        {{ form.id }}
+                    </div>
+                    {% endwith %}
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-between mt-4">
+            <a href="{% url 'peer_review_dashboard' %}" class="btn btn-outline-secondary px-4">
+                Cancel
+            </a>
+            <button type="submit" class="btn btn-primary px-4">
+                <i class="bi bi-save me-2"></i> Save Changes
+            </button>
+        </div>
+    </form>
+</div>
+
+<style>
+    .question-card {
+        border-left: 4px solid #4361ee;
+        transition: all 0.2s ease;
+    }
+    
+    .question-card:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .form-switch .form-check-input {
+        width: 3em;
+        height: 1.5em;
+    }
+    
+    textarea {
+        min-height: 100px;
+    }
+    
+    .questions-container {
+        max-height: 600px;
+        overflow-y: auto;
+        padding-right: 0.5rem;
+    }
+    
+    /* Custom scrollbar */
+    .questions-container::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    .questions-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    
+    .questions-container::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 10px;
+    }
+    
+    .questions-container::-webkit-scrollbar-thumb:hover {
+        background: #a1a1a1;
+    }
+    
+    .delete-toggle .form-check-input:checked {
+        background-color: #dc3545;
+        border-color: #dc3545;
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add confirmation before leaving page with unsaved changes
+    const form = document.querySelector('form');
+    let formChanged = false;
+    
+    // Detect form changes
+    form.querySelectorAll('input, textarea, select').forEach(element => {
+        element.addEventListener('change', () => formChanged = true);
+        element.addEventListener('input', () => formChanged = true);
+    });
+    
+    // Warn before leaving
+    window.addEventListener('beforeunload', (e) => {
+        if (formChanged) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+
+    // Add new question functionality
+    const addQuestionBtn = document.getElementById('add-question');
+    const container = document.getElementById('questions-container');
+    const totalForms = document.getElementById('id_questions-TOTAL_FORMS');
+    const emptyFormDiv = document.getElementById('empty-form');
+
+    if (addQuestionBtn && container && totalForms && emptyFormDiv) {
+        addQuestionBtn.addEventListener('click', function() {
+            const formCount = parseInt(totalForms.value);
+            let newFormHtml = emptyFormDiv.innerHTML.replace(/__prefix__/g, formCount);
+            newFormHtml = newFormHtml.replace(/__num__/g, formCount + 1);
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = newFormHtml;
+            // Append all children (in case empty_form renders multiple root nodes)
+            Array.from(tempDiv.children).forEach(child => container.appendChild(child));
+            totalForms.value = formCount + 1;
+        });
+    }
+});
+</script>
+{% endblock %}

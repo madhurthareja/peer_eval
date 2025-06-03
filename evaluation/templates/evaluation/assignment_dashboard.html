@@ -1,0 +1,175 @@
+{% extends "evaluation/base.html" %}
+{% block content %}
+<div class="assignment-container">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="page-title mb-0">Manage Assignments</h2>
+        <a href="{% url 'create_assignment' %}" class="btn btn-primary btn-create">
+            <i class="bi bi-plus-lg me-2"></i>Create Assignment
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive-sm">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th class="ps-4">Title</th>
+                            <th>Course</th>
+                            <th>Deadline</th>
+                            <th>Status</th>
+                            <th class="text-end pe-4">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for a in assignments %}
+                        <tr>
+                            <td class="ps-4 fw-semibold">{{ a.title }}</td>
+                            <td>
+                                <span class="badge bg-light text-dark">{{ a.course.name }}</span>
+                            </td>
+                            <td>
+                                <div class="d-flex align-items-center">
+                                    <i class="bi bi-calendar-event me-2 text-muted"></i>
+                                    <span {% if a.is_past_deadline %}class="text-danger"{% endif %}>
+                                        {{ a.deadline|date:"M d, Y H:i" }}
+                                    </span>
+                                </div>
+                            </td>
+                            <td>
+                                {% if a.is_published %}
+                                <span class="badge bg-success bg-opacity-10 text-success">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Live
+                                </span>
+                                {% else %}
+                                <span class="badge bg-warning bg-opacity-10 text-warning">
+                                    <i class="bi bi-pencil-fill me-1"></i> Draft
+                                </span>
+                                {% endif %}
+                            </td>
+                            <td class="text-end pe-4">
+                                <div class="dropdown">
+                                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" 
+                                            type="button" 
+                                            data-bs-toggle="dropdown">
+                                        Actions
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'edit_assignment' a.id %}">
+                                                <i class="bi bi-pencil-square me-2"></i>Edit
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a class="dropdown-item" href="{% url 'assignment_submissions' a.id %}">
+                                                <i class="bi bi-file-earmark-text me-2"></i>Submissions
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <a class="dropdown-item text-danger" href="{% url 'delete_assignment' a.id %}">
+                                                <i class="bi bi-trash me-2"></i>Delete
+                                            </a>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">
+                                <i class="bi bi-inbox" style="font-size: 2rem;"></i>
+                                <p class="mt-2">No assignments found. Create your first assignment to get started.</p>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .assignment-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    .page-title {
+        font-weight: 600;
+        color: #2b2d42;
+    }
+
+    .btn-create {
+        padding: 0.5rem 1.25rem;
+        font-weight: 500;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(67, 97, 238, 0.15);
+    }
+
+    .table {
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table thead th {
+        border-bottom: none;
+        font-weight: 500;
+        color: #4a5568;
+        text-transform: uppercase;
+        font-size: 0.8rem;
+        letter-spacing: 0.5px;
+        padding: 1rem;
+    }
+
+    .table tbody tr {
+        transition: all 0.2s ease;
+    }
+
+    .table tbody tr:hover {
+        background-color: rgba(67, 97, 238, 0.03);
+    }
+
+    .table tbody td {
+        padding: 1rem;
+        vertical-align: middle;
+        border-top: 1px solid #f0f0f0;
+    }
+
+    .badge {
+        padding: 0.35rem 0.65rem;
+        font-weight: 500;
+        border-radius: 6px;
+    }
+
+    .dropdown-menu {
+        border: none;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        padding: 0.5rem;
+    }
+
+    .dropdown-item {
+        padding: 0.5rem 1rem;
+        border-radius: 6px;
+        font-size: 0.9rem;
+    }
+
+    .dropdown-item:hover {
+        background-color: rgba(67, 97, 238, 0.1);
+    }
+
+    @media (max-width: 768px) {
+        .assignment-container {
+            padding: 1rem 0.5rem;
+        }
+        
+        .table-responsive {
+            border-radius: 8px;
+            border: 1px solid #f0f0f0;
+        }
+    }
+</style>
+{% endblock %}

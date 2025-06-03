@@ -1,0 +1,711 @@
+{% extends "evaluation/base.html" %}
+{% block content %}
+<div class="assignments-container">
+    <!-- Header Section -->
+    <div class="assignments-header">
+        <div class="header-content">
+            <h1 class="page-title">
+                <i class="bi bi-journal-text me-2"></i>Assignments
+            </h1>
+            <p class="page-subtitle">Assignments available for you</p>
+        </div>
+        <div class="header-stats">
+            <div class="stat-card">
+                <span class="stat-value">{{ active_assignments|length }}</span>
+                <span class="stat-label">Active</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-value">{{ submitted_count }}</span>
+                <span class="stat-label">Submitted</span>
+            </div>
+            <div class="stat-card urgent">
+                <span class="stat-value">{{ urgent_count }}</span>
+                <span class="stat-label">Urgent</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Filters and Actions -->
+    <div class="assignments-toolbar">
+        <div class="search-filter">
+            <i class="bi bi-search"></i>
+            <input type="text" placeholder="Search assignments..." id="assignmentSearch">
+        </div>
+        <div class="view-options">
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-sm btn-outline-secondary active" data-view="table">
+                    <i class="bi bi-list-ul"></i> Table
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-secondary" data-view="cards">
+                    <i class="bi bi-grid"></i> Cards
+                </button>
+            </div>
+            <div class="dropdown">
+                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                    <i class="bi bi-funnel"></i> Filter
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" href="javascript:void(0)" data-filter="all" role="button">All</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" data-filter="pending" role="button">Pending</a></li>
+                    <li><a class="dropdown-item" href="javascript:void(0)" data-filter="completed" role="button">Completed</a></li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Table View -->
+    <div class="assignments-table-view" id="tableView">
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-0">
+                {% if assignments %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0" id="assignmentsTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th class="ps-4 sortable" data-sort="title">Assignment <i class="bi bi-arrow-down-up"></i></th>
+                                <th class="sortable" data-sort="course">Course <i class="bi bi-arrow-down-up"></i></th>
+                                <th class="sortable" data-sort="deadline">Deadline <i class="bi bi-arrow-down-up"></i></th>
+                                <th class="text-end pe-4">Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for assignment in assignments %}
+                            <tr class="assignment-row" 
+                                data-status="{% if assignment.is_submitted %}submitted{% elif assignment.is_past_deadline %}overdue{% else %}pending{% endif %}"
+                                data-urgency="{% if assignment.is_urgent %}urgent{% else %}normal{% endif %}">
+                                <td class="ps-4">
+                                    <div class="d-flex align-items-center">
+                                        <div class="assignment-icon me-3">
+                                            <i class="bi bi-file-earmark-text fs-5"></i>
+                                        </div>
+                                        <div>
+                                            <div class="fw-semibold">{{ assignment.title }}</div>
+                                            <small class="text-muted">{{ assignment.course.code }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>
+                                    {{ assignment.course.name }}
+                                </td>
+                                <td>
+                                    <div class="deadline-info {% if assignment.is_past_deadline %}text-danger{% endif %}">
+                                        <div>{{ assignment.deadline|date:"M j, Y" }}</div>
+                                        <div class="small {% if assignment.is_past_deadline %}text-danger{% else %}text-muted{% endif %}">
+                                            {{ assignment.deadline|date:"g:i A" }}
+                                            {% if assignment.is_urgent and not assignment.is_past_deadline %}
+                                            <span class="badge bg-warning bg-opacity-10 text-warning ms-2">
+                                                {{ assignment.deadline|timeuntil }} left
+                                            </span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-end pe-4">
+                                    {% if assignment.is_submitted %}
+                                        <span class="badge bg-success bg-opacity-10 text-success">
+                                            <i class="bi bi-check-circle-fill me-1"></i> Submitted
+                                        </span>
+                                    {% elif assignment.is_past_deadline %}
+                                        <span class="badge bg-danger bg-opacity-10 text-danger">
+                                            <i class="bi bi-lock-fill me-1"></i> Closed
+                                        </span>
+                                    {% else %}
+                                        <a href="{% url 'submit_assignment' assignment.id %}" class="btn btn-sm btn-primary px-3">
+                                            <i class="bi bi-upload me-1"></i> Submit
+                                        </a>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="empty-state text-center py-5">
+                    <i class="bi bi-journal-x fs-1 text-muted"></i>
+                    <h5 class="mt-3 text-muted">No active assignments</h5>
+                    <p class="text-muted small">You currently have no assignments to submit</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Card View (Hidden by default) -->
+    <div class="assignments-card-view d-none" id="cardView">
+        <div class="row g-4">
+            {% for assignment in assignments %}
+            <div class="col-md-6 col-lg-4">
+                <div class="assignment-card {% if assignment.is_submitted %}submitted{% elif assignment.is_past_deadline %}overdue{% elif assignment.is_urgent %}urgent{% endif %}">
+                    <div class="card-header">
+                        <div class="course-badge">
+                            {{ assignment.course.code }}
+                        </div>
+                        <div class="status-badge">
+                            {% if assignment.is_submitted %}
+                                <i class="bi bi-check-circle-fill text-success me-1"></i> Submitted
+                            {% elif assignment.is_past_deadline %}
+                                <i class="bi bi-exclamation-triangle-fill text-danger me-1"></i> Overdue
+                            {% elif assignment.is_urgent %}
+                                <i class="bi bi-clock-fill text-warning me-1"></i> Urgent
+                            {% else %}
+                                <i class="bi bi-clock-history text-muted me-1"></i> Pending
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <h3 class="card-title">{{ assignment.title }}</h3>
+                        <p class="card-text">{{ assignment.course.name }}</p>
+                        
+                        <div class="deadline-info">
+                            <i class="bi bi-calendar-event me-2"></i>
+                            <div>
+                                <div>{{ assignment.deadline|date:"M j, Y" }}</div>
+                                <small class="{% if assignment.is_past_deadline %}text-danger{% else %}text-muted{% endif %}">
+                                    {{ assignment.deadline|date:"g:i A" }}
+                                </small>
+                            </div>
+                        </div>
+                        
+                        {% if assignment.description %}
+                        <div class="assignment-desc">
+                            <p>{{ assignment.description|truncatechars:100 }}</p>
+                        </div>
+                        {% endif %}
+                    </div>
+                    <div class="card-footer">
+                        {% if assignment.is_submitted %}
+                            {% comment %} <a href="#" class="btn btn-sm btn-outline-primary w-100">
+                                <i class="bi bi-eye me-1"></i> View Submission
+                            </a> {% endcomment %}
+                        {% else %}
+                            <a href="{% url 'submit_assignment' assignment.id %}" class="btn btn-sm btn-primary w-100">
+                                <i class="bi bi-upload me-1"></i> Submit Assignment
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="empty-state text-center py-5">
+                    <i class="bi bi-journal-x fs-1 text-muted"></i>
+                    <h5 class="mt-3 text-muted">No active assignments</h5>
+                    <p class="text-muted small">You currently have no assignments to submit</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .assignments-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    .assignments-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-end;
+        margin-bottom: 2rem;
+        flex-wrap: wrap;
+        gap: 1.5rem;
+    }
+
+    .header-content {
+        flex: 1;
+        min-width: 300px;
+    }
+
+    .page-title {
+        font-weight: 600;
+        color: #2b2d42;
+        font-size: 1.75rem;
+        margin-bottom: 0.5rem;
+        display: flex;
+        align-items: center;
+    }
+
+    .page-subtitle {
+        color: #6b7280;
+        margin-bottom: 0;
+    }
+
+    .header-stats {
+        display: flex;
+        gap: 1rem;
+    }
+
+    .stat-card {
+        background: white;
+        border-radius: 8px;
+        padding: 0.75rem 1.25rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        min-width: 80px;
+    }
+
+    .stat-card.urgent {
+        border-left: 3px solid #f59e0b;
+    }
+
+    .stat-value {
+        font-size: 1.5rem;
+        font-weight: 600;
+        color: #2b2d42;
+        display: block;
+        line-height: 1;
+    }
+
+    .stat-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+
+    .assignments-toolbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+        flex-wrap: wrap;
+        gap: 1rem;
+    }
+
+    .search-filter {
+        position: relative;
+        flex: 1;
+        min-width: 250px;
+    }
+
+    .search-filter i {
+        position: absolute;
+        left: 1rem;
+        top: 50%;
+        transform: translateY(-50%);
+        color: #9ca3af;
+    }
+
+    .search-filter input {
+        width: 100%;
+        padding: 0.5rem 1rem 0.5rem 2.5rem;
+        border-radius: 6px;
+        border: 1px solid #e5e7eb;
+        transition: all 0.2s ease;
+    }
+
+    .search-filter input:focus {
+        border-color: #4361ee;
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        outline: none;
+    }
+
+    .view-options {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    .btn-group .btn {
+        border-radius: 6px !important;
+    }
+
+    .btn-group .btn.active {
+        background-color: #4361ee;
+        color: white;
+        border-color: #4361ee;
+    }
+
+    /* Table Styles */
+    .table {
+        border-collapse: separate;
+        border-spacing: 0;
+    }
+
+    .table thead th {
+        border-bottom: none;
+        font-weight: 500;
+        color: #5a6a85;
+        font-size: 0.8rem;
+        letter-spacing: 0.3px;
+        padding: 1rem;
+        text-transform: uppercase;
+        vertical-align: middle;
+    }
+
+    .sortable {
+        cursor: pointer;
+        user-select: none;
+    }
+
+    .sortable:hover {
+        background-color: #f3f4f6;
+    }
+
+    .table tbody tr {
+        transition: all 0.2s ease;
+        border-top: 1px solid #f5f5f5;
+    }
+
+    .table tbody tr:first-child {
+        border-top: none;
+    }
+
+    .table tbody tr:hover {
+        background-color: rgba(67, 97, 238, 0.03);
+    }
+
+    .table tbody td {
+        padding: 1.25rem 1rem;
+        vertical-align: middle;
+    }
+
+    .assignment-icon {
+        width: 42px;
+        height: 42px;
+        border-radius: 8px;
+        background-color: rgba(67, 97, 238, 0.08);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: #4361ee;
+    }
+
+    .deadline-info {
+        display: flex;
+        flex-direction: column;
+    }
+
+    /* Card Styles */
+    .assignment-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border: 1px solid #e5e7eb;
+        height: 100%;
+        display: flex;
+        flex-direction: column;
+        transition: all 0.2s ease;
+    }
+
+    .assignment-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    .assignment-card.urgent {
+        border-left: 4px solid #f59e0b;
+    }
+
+    .assignment-card.overdue {
+        border-left: 4px solid #ef4444;
+    }
+
+    .assignment-card.submitted {
+        border-left: 4px solid #10b981;
+    }
+
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 1rem 1rem 0.5rem;
+    }
+
+    .course-badge {
+        background-color: #f3f4f6;
+        color: #4b5563;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .status-badge {
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .card-body {
+        padding: 1rem;
+        flex: 1;
+    }
+
+    .card-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        margin-bottom: 0.75rem;
+        color: #2b2d42;
+    }
+
+    .card-text {
+        color: #6b7280;
+        font-size: 0.875rem;
+        margin-bottom: 1rem;
+    }
+
+    .deadline-info {
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding: 0.75rem;
+        background-color: #f9fafb;
+        border-radius: 6px;
+    }
+
+    .deadline-info i {
+        font-size: 1.25rem;
+        color: #9ca3af;
+    }
+
+    .assignment-desc {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #f3f4f6;
+    }
+
+    .card-footer {
+        padding: 1rem;
+        background-color: transparent;
+        border-top: 1px solid #f3f4f6;
+    }
+
+    /* Button Styles */
+    .btn-primary {
+        background: #4361ee;
+        border: none;
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+
+    .btn-primary:hover {
+        background: #3a56d4;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 8px rgba(67, 97, 238, 0.2);
+    }
+
+    /* Empty State */
+    .empty-state {
+        padding: 3rem 1rem;
+    }
+
+    .empty-state i {
+        font-size: 3rem;
+        color: #d1d5db;
+    }
+
+    /* Responsive Styles */
+    @media (max-width: 768px) {
+        .assignments-container {
+            padding: 1rem;
+        }
+
+        .assignments-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .header-stats {
+            width: 100%;
+            justify-content: space-between;
+        }
+
+        .stat-card {
+            flex: 1;
+        }
+
+        .assignments-toolbar {
+            flex-direction: column;
+            align-items: stretch;
+        }
+
+        .table-responsive {
+            border: 1px solid #f0f0f0;
+            border-radius: 8px;
+        }
+
+        .table thead {
+            display: none;
+        }
+
+        .table tbody tr {
+            display: block;
+            padding: 1.25rem;
+            border-top: 1px solid #f0f0f0;
+        }
+
+        .table tbody td {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border: none;
+        }
+
+        .table tbody td::before {
+            content: attr(data-label);
+            font-weight: 500;
+            color: #5a6a85;
+            margin-right: 1rem;
+        }
+
+        .table tbody td:last-child {
+            justify-content: flex-end;
+            padding-top: 1rem;
+            border-top: 1px solid #f0f0f0;
+            margin-top: 0.5rem;
+        }
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // View Toggle
+    const viewButtons = document.querySelectorAll('[data-view]');
+    const tableView = document.getElementById('tableView');
+    const cardView = document.getElementById('cardView');
+    
+    viewButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            viewButtons.forEach(btn => btn.classList.remove('active'));
+            this.classList.add('active');
+            
+            if (this.dataset.view === 'table') {
+                tableView.classList.remove('d-none');
+                cardView.classList.add('d-none');
+            } else {
+                tableView.classList.add('d-none');
+                cardView.classList.remove('d-none');
+            }
+        });
+    });
+
+    // Search Functionality
+    const searchInput = document.getElementById('assignmentSearch');
+    if (searchInput) {
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const rows = document.querySelectorAll('.assignment-row');
+            
+            rows.forEach(row => {
+                const text = row.textContent.toLowerCase();
+                if (text.includes(searchTerm)) {
+                    row.style.display = '';
+                } else {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    }
+
+    // Filter Functionality
+    const filterItems = document.querySelectorAll('[data-filter]');
+    filterItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            const filter = this.dataset.filter;
+            const rows = document.querySelectorAll('.assignment-row');
+            
+            rows.forEach(row => {
+                if (filter === 'all') {
+                    row.style.display = '';
+                } else if (filter === 'submitted' && row.dataset.status === 'submitted') {
+                    row.style.display = '';
+                } else if (filter === 'pending' && row.dataset.status === 'pending') {
+                    row.style.display = '';
+                } else if (filter === 'overdue' && row.dataset.status === 'overdue') {
+                    row.style.display = '';
+                } else if (filter === 'urgent' && row.dataset.urgency === 'urgent') {
+                    row.style.display = '';
+                } else if (filter !== 'all') {
+                    row.style.display = 'none';
+                }
+            });
+        });
+    });
+
+    // Sorting Functionality
+    const sortableHeaders = document.querySelectorAll('.sortable');
+    sortableHeaders.forEach(header => {
+        header.addEventListener('click', function() {
+            const table = document.getElementById('assignmentsTable');
+            const tbody = table.querySelector('tbody');
+            const rows = Array.from(tbody.querySelectorAll('tr'));
+            const columnIndex = Array.from(this.parentNode.children).indexOf(this);
+            const sortKey = this.dataset.sort;
+            let isAscending = !this.classList.contains('asc');
+            
+            // Clear other sort indicators
+            sortableHeaders.forEach(h => {
+                h.classList.remove('asc', 'desc');
+                h.querySelector('i').className = 'bi bi-arrow-down-up';
+            });
+            
+            // Set current sort indicator
+            this.classList.add(isAscending ? 'asc' : 'desc');
+            const icon = this.querySelector('i');
+            icon.className = isAscending ? 'bi bi-arrow-up' : 'bi bi-arrow-down';
+            
+            // Sort rows
+            rows.sort((a, b) => {
+                const aValue = getCellValue(a, columnIndex, sortKey);
+                const bValue = getCellValue(b, columnIndex, sortKey);
+                
+                if (sortKey === 'deadline') {
+                    return isAscending ? 
+                        new Date(aValue) - new Date(bValue) : 
+                        new Date(bValue) - new Date(aValue);
+                } else {
+                    return isAscending ? 
+                        aValue.localeCompare(bValue) : 
+                        bValue.localeCompare(aValue);
+                }
+            });
+            
+            // Reattach sorted rows
+            rows.forEach(row => tbody.appendChild(row));
+        });
+    });
+    
+    function getCellValue(row, index, key) {
+        const cell = row.children[index];
+        if (key === 'deadline') {
+            return cell.querySelector('.deadline-info div').textContent.trim();
+        }
+        return cell.textContent.trim();
+    }
+
+    // Mobile data labels
+    const ths = document.querySelectorAll('thead th');
+    const tds = document.querySelectorAll('tbody td');
+    
+    tds.forEach((td, index) => {
+        const thIndex = index % ths.length;
+        const label = ths[thIndex].textContent.replace(/[\s\n]+/g, ' ').trim();
+        td.setAttribute('data-label', label);
+    });
+
+    const reviewFilterItems = document.querySelectorAll('#reviews-section [data-filter]');
+    const reviewCards = document.querySelectorAll('#reviews-section .review-card');
+
+    reviewFilterItems.forEach(item => {
+        item.addEventListener('click', function(e) {
+            e.preventDefault();
+            const filter = this.dataset.filter;
+            reviewCards.forEach(card => {
+                if (filter === 'all') {
+                    card.style.display = '';
+                } else if (card.dataset.status === filter) {
+                    card.style.display = '';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+    });
+});
+</script>
+{% endblock %}

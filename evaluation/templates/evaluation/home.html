@@ -1,0 +1,228 @@
+{% extends "evaluation/base.html" %}
+{% block content %}
+<div class="homepage-container">
+    <div class="hero-section">
+        <div class="hero-content">
+            <h1 class="hero-title mt-4">Peer Evaluation System</h1>
+            <p class="hero-subtitle">Enhancing collaborative learning through transparent peer assessment</p>
+            <a href="{% url 'login' %}" class="hero-button">
+                Get Started <i class="bi bi-arrow-right-short"></i>
+            </a>
+        </div>
+        <div class="hero-image">
+            {% comment %} <img src="https://illustrations.popsy.co/amber/student-sitting-at-desk.svg" alt="Student learning illustration" class="img-fluid"> {% endcomment %}
+        </div>
+    </div>
+
+    <div class="features-section">
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i class="bi bi-people-fill"></i>
+            </div>
+            <h3>For Teachers</h3>
+            <ul>
+                <li>Create courses and assignments</li>
+                <li>Manage student enrollments</li>
+                <li>Track evaluation progress</li>
+                <li>Bulk registration via CSV</li>
+            </ul>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i class="bi bi-person-video3"></i>
+            </div>
+            <h3>For Students</h3>
+            <ul>
+                <li>Submit assignments securely</li>
+                <li>Review peers' work</li>
+                <li>Receive feedback</li>
+                <li>Track your progress</li>
+            </ul>
+        </div>
+
+        <div class="feature-card">
+            <div class="feature-icon">
+                <i class="bi bi-shield-lock-fill"></i>
+            </div>
+            <h3>Security</h3>
+            <ul>
+                <li>Role-based access control</li>
+                <li>Secure authentication</li>
+                <li>Data protection</li>
+                <li>Privacy focused</li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="cta-section">
+        <h2>Ready to transform your assessment process?</h2>
+        <a href="{% url 'login' %}" class="cta-button">
+            Login Now <i class="bi bi-box-arrow-in-right"></i>
+        </a>
+    </div>
+</div>
+
+<style>
+    .homepage-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    .hero-section {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 3rem;
+        margin-bottom: 4rem;
+        padding: 2rem 0;
+    }
+
+    .hero-content {
+        flex: 1;
+    }
+
+    .hero-image {
+        flex: 1;
+        text-align: center;
+    }
+
+    .hero-title {
+        font-size: 2.5rem;
+        font-weight: 700;
+        color: #2b2d42;
+        margin-bottom: 1rem;
+        line-height: 1.2;
+    }
+
+    .hero-subtitle {
+        font-size: 1.25rem;
+        color: #4a5568;
+        margin-bottom: 2rem;
+        max-width: 600px;
+    }
+
+    .hero-button {
+        display: inline-flex;
+        align-items: center;
+        background: linear-gradient(135deg, #4361ee, #3f37c9);
+        color: white;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px rgba(67, 97, 238, 0.1);
+    }
+
+    .hero-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(67, 97, 238, 0.15);
+        color: white;
+    }
+
+    .features-section {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 2rem;
+        margin-bottom: 4rem;
+    }
+
+    .feature-card {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0, 0, 0, 0.05);
+    }
+
+    .feature-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+    }
+
+    .feature-icon {
+        font-size: 2rem;
+        color: #4361ee;
+        margin-bottom: 1rem;
+    }
+
+    .feature-card h3 {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 1rem;
+        color: #2b2d42;
+    }
+
+    .feature-card ul {
+        list-style: none;
+        padding-left: 0;
+    }
+
+    .feature-card li {
+        margin-bottom: 0.5rem;
+        position: relative;
+        padding-left: 1.5rem;
+        color: #4a5568;
+    }
+
+    .feature-card li:before {
+        content: "✓";
+        position: absolute;
+        left: 0;
+        color: #4361ee;
+        font-weight: bold;
+    }
+
+    .cta-section {
+        text-align: center;
+        padding: 3rem;
+        background: linear-gradient(135deg, rgba(67, 97, 238, 0.05) 0%, rgba(255, 255, 255, 0.1) 100%);
+        border-radius: 12px;
+        margin-top: 2rem;
+    }
+
+    .cta-section h2 {
+        font-size: 1.75rem;
+        margin-bottom: 1.5rem;
+        color: #2b2d42;
+    }
+
+    .cta-button {
+        display: inline-flex;
+        align-items: center;
+        background: linear-gradient(135deg, #4361ee, #3f37c9);
+        color: white;
+        padding: 0.75rem 2rem;
+        border-radius: 8px;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px rgba(67, 97, 238, 0.1);
+    }
+
+    .cta-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 6px 12px rgba(67, 97, 238, 0.15);
+        color: white;
+    }
+
+    @media (max-width: 768px) {
+        .hero-section {
+            flex-direction: column;
+            text-align: center;
+        }
+
+        .hero-subtitle {
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        .hero-button {
+            margin: 0 auto;
+        }
+    }
+</style>
+{% endblock %}

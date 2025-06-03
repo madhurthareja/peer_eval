@@ -1,0 +1,12 @@
+{% extends "evaluation/base.html" %}
+{% block content %}
+<div class="container py-4">
+    <h2>Confirm Delete Submission</h2>
+    <p>Are you sure you want to delete the submission by <strong>{{ submission.student.user.get_full_name }}</strong> for assignment <strong>{{ submission.assignment.title }}</strong>?</p>
+    <form method="post">
+        {% csrf_token %}
+        <button type="submit" class="btn btn-danger">Yes, Delete</button>
+        <a href="{% url 'assignment_submissions' submission.assignment.id %}" class="btn btn-secondary">Cancel</a>
+    </form>
+</div>
+{% endblock %}

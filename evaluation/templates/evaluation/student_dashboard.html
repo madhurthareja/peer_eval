@@ -1,0 +1,814 @@
+{% extends "evaluation/base.html" %}
+{% block content %}
+<div class="dashboard-container">
+    <!-- Header Section -->
+    <div class="dashboard-header">
+        <div class="welcome-message">
+            <h1 class="dashboard-title">Welcome, {{ request.user.get_full_name|default:request.user.username }}</h1>
+            <p class="dashboard-subtitle">Here's your current academic overview</p>
+        </div>
+        <div class="current-date">
+            <div class="date-badge">
+                <span class="day">{{ current_date|date:"d" }}</span>
+                <span class="month-year">{{ current_date|date:"M Y" }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-grid">
+        <a href="#assignments-section" class="summary-card assignment-card">
+            <div class="summary-content">
+                <span class="summary-label">Active Assignments</span>
+                <span class="summary-value">{{ active_assignments.count }}</span>
+                {% if active_assignments.count > 0 %}
+                <span class="summary-extra">
+                    {{ nearest_deadline|date:"M j" }} deadline
+                </span>
+                {% endif %}
+            </div>
+            <div class="summary-icon">
+                <i class="bi bi-journal-text"></i>
+            </div>
+        </a>
+
+        <a href="#reviews-section" class="summary-card review-card">
+            <div class="summary-content">
+                <span class="summary-label">Pending Reviews</span>
+                {% comment %} <span class="summary-value">{{ pending_reviews|length }}</span> {% endcomment %}
+                {% if pending_reviews.count > 0 %}
+                <span class="summary-extra">
+                    {{ oldest_review_deadline|date:"M j" }} deadline
+                </span>
+                {% endif %}
+            </div>
+            <div class="summary-icon">
+                <i class="bi bi-clipboard-check"></i>
+            </div>
+        </a>
+
+        <a href="#deadlines-section" class="summary-card deadline-card">
+            <div class="summary-content">
+                <span class="summary-label">Upcoming Deadlines</span>
+                <span class="summary-value">{{ upcoming_deadlines.count }}</span>
+                {% if upcoming_deadlines.count > 0 %}
+                <span class="summary-extra">
+                    {{ nearest_deadline|date:"M j" }} next
+                </span>
+                {% endif %}
+            </div>
+            <div class="summary-icon">
+                <i class="bi bi-calendar-event"></i>
+            </div>
+        </a>
+    </div>
+
+    <!-- Priority Section -->
+    {% if priority_items %}
+    <section class="dashboard-section priority-section">
+        <h2 class="section-title">
+            <i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>
+            Priority Items
+        </h2>
+        <div class="priority-items">
+            {% for item in priority_items %}
+            <div class="priority-item">
+                <div class="priority-icon">
+                    {% if item.type == 'assignment' %}
+                    <i class="bi bi-journal-text"></i>
+                    {% else %}
+                    <i class="bi bi-clipboard-check"></i>
+                    {% endif %}
+                </div>
+                <div class="priority-content">
+                    <h3>{{ item.title }}</h3>
+                    <p class="mb-1">{{ item.course }}</p>
+                    <div class="d-flex align-items-center">
+                        <span class="badge me-2 {% if item.urgency == 'high' %}bg-danger{% else %}bg-warning{% endif %}">
+                            Due {{ item.deadline|date:"M j" }}
+                        </span>
+                        <small>{{ item.deadline|timeuntil }} left</small>
+                    </div>
+                </div>
+                <div class="priority-action">
+                    <a href="{{ item.link }}" class="btn btn-sm {% if item.urgency == 'high' %}btn-danger{% else %}btn-warning{% endif %}">
+                        {% if item.type == 'assignment' %}Submit{% else %}Review{% endif %}
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </section>
+    {% endif %}
+
+    <!-- Upcoming Deadlines Section -->
+    <section id="deadlines-section" class="dashboard-section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="bi bi-calendar-week me-2"></i>
+                Upcoming Deadlines
+            </h2>
+            <!-- ...filter dropdown if you want... -->
+        </div>
+        {% if upcoming_deadlines %}
+        <div class="deadline-cards">
+            {% for assignment in upcoming_deadlines %}
+            <div class="deadline-card {% if assignment.is_urgent %}urgent{% endif %}">
+                <div class="deadline-date">
+                    <span class="day">{{ assignment.deadline|date:"d" }}</span>
+                    <span class="month">{{ assignment.deadline|date:"M" }}</span>
+                </div>
+                <div class="deadline-content">
+                    <h3>
+                        <a href="{% url 'submit_assignment' assignment.id %}">{{ assignment.title }}</a>
+                    </h3>
+                    <p class="text-muted mb-1">{{ assignment.course.name }}</p>
+                    <div class="deadline-meta">
+                        <span class="time">{{ assignment.deadline|date:"g:i A" }}</span>
+                        <span class="status-badge {% if assignment.is_submitted %}completed{% else %}pending{% endif %}">
+                            {% if assignment.is_submitted %}Submitted{% else %}Pending{% endif %}
+                        </span>
+                    </div>
+                </div>
+                <div class="deadline-actions">
+                    {% if assignment.is_submitted %}
+                    <span class="badge bg-success">Submitted</span>
+                    {% else %}
+                    <a href="{% url 'submit_assignment' assignment.id %}" class="btn btn-sm btn-primary">
+                        Submit
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-calendar-x"></i>
+            <p>No upcoming deadlines</p>
+        </div>
+        {% endif %}
+    </section>
+
+    <!-- Overdue Assignments Section -->
+    <section class="dashboard-section">
+        <h2 class="section-title">Overdue Assignments</h2>
+        {% if overdue_assignments %}
+        <div class="section-content">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Assignment</th>
+                        <th>Course</th>
+                        <th>Deadline</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for assignment in overdue_assignments %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'submit_assignment' assignment.id %}" class="text-link">
+                                {{ assignment.title }}
+                            </a>
+                        </td>
+                        <td>{{ assignment.course.name }}</td>
+                        <td class="text-danger">
+                            {{ assignment.deadline|date:"M j, Y H:i" }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>No overdue assignments</p>
+        </div>
+        {% endif %}
+    </section>
+
+    <!-- Peer Reviews Section -->
+    <section id="reviews-section" class="dashboard-section">
+        <div class="section-header">
+            <h2 class="section-title">
+                <i class="bi bi-clipboard-check me-2"></i>
+                Peer Reviews
+            </h2>
+            <div class="section-actions">
+                <div class="dropdown">
+                    <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" data-bs-toggle="dropdown">
+                        Filter
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a class="dropdown-item" href="#">All</a></li>
+                        <li><a class="dropdown-item" href="#">Pending</a></li>
+                        <li><a class="dropdown-item" href="#">Completed</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        
+        {% if pending_reviews %}
+        <div class="review-cards">
+            {% for review in pending_reviews %}
+            <div class="review-card {% if review.is_urgent %}urgent{% endif %}">
+                <div class="review-header">
+                    <h3>{{ review.assignment.title }}</h3>
+                    <span class="badge {% if review.completed %}bg-success{% else %}bg-warning{% endif %}">
+                        {% if review.completed %}Completed{% else %}Pending{% endif %}
+                    </span>
+                </div>
+                <div class="review-body">
+                    <strong>Assignment:</strong> {{ review.submission.assignment.title }}<br>
+                    <p class="mb-1"><strong>Course:</strong> {{ review.submission.assignment.course.name }}</p>
+                    <div class="review-meta">
+                        <span>
+                            <i class="bi bi-calendar me-1"></i>
+                            Due {{ review.submission.assignment.deadline|date:"M j, Y" }}
+                        </span>
+                        {% if not review.completed %}
+                        <span class="ms-3">
+                            <i class="bi bi-clock me-1"></i>
+                            {{ review.submission.assignment.deadline|timeuntil }} left
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="review-actions">
+                    <a href="{% url 'fill_peer_review' review.id %}" class="btn btn-sm {% if review.completed %}btn-outline-primary{% else %}btn-primary{% endif %}">
+                        {% if review.completed %}View{% else %}Complete{% endif %}
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-clipboard-x"></i>
+            <p>No assigned reviews</p>
+        </div>
+        {% endif %}
+    </section>
+
+    <!-- All Assignments Section -->
+    <section class="dashboard-section">
+        <h2 class="section-title">Assignments</h2>
+        {% if assignments %}
+        <div class="section-content">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Assignment</th>
+                        <th>Course</th>
+                        <th>Status</th>
+                        <th>Deadline</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for assignment in assignments %}
+                    <tr>
+                        <td>
+                            <a href="{% url 'submit_assignment' assignment.id %}" class="text-link">
+                                {{ assignment.title }}
+                            </a>
+                        </td>
+                        <td>{{ assignment.course.name }}</td>
+                        <td>
+                            {% if assignment.is_submitted %}
+                                <span class="badge bg-success">Submitted</span>
+                            {% elif assignment.is_overdue %}
+                                <span class="badge bg-danger">Overdue</span>
+                            {% else %}
+                                <span class="badge bg-warning text-dark">Pending</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {{ assignment.deadline|date:"M j, Y H:i" }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <p>No assignments</p>
+        </div>
+        {% endif %}
+    </section>
+
+</div>
+
+<style>
+    /* Base Styles */
+    .dashboard-container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 2rem 1rem;
+    }
+
+    /* Header Section */
+    .dashboard-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 2rem;
+    }
+
+    .dashboard-title {
+        font-size: 1.75rem;
+        font-weight: 600;
+        color: #2b2d42;
+        margin-bottom: 0.25rem;
+    }
+
+    .dashboard-subtitle {
+        color: #6b7280;
+        font-size: 1rem;
+    }
+
+    .current-date {
+        display: flex;
+        align-items: center;
+    }
+
+    .date-badge {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 60px;
+        height: 60px;
+        border-radius: 12px;
+        background-color: #f3f4f6;
+        color: #4b5563;
+    }
+
+    .date-badge .day {
+        font-size: 1.5rem;
+        font-weight: 600;
+        line-height: 1;
+    }
+
+    .date-badge .month-year {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+    }
+
+    /* Summary Cards */
+    .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 1.5rem;
+        margin-bottom: 2.5rem;
+    }
+
+    .summary-card {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        transition: all 0.2s ease;
+        border: 1px solid #e5e7eb;
+        text-decoration: none;
+        color: inherit;
+    }
+
+    .summary-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    }
+
+    .assignment-card {
+        border-left: 4px solid #3b82f6;
+    }
+
+    .review-card {
+        border-left: 4px solid #10b981;
+    }
+
+    .deadline-card {
+        border-left: 4px solid #f59e0b;
+    }
+
+    .summary-content {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .summary-label {
+        font-size: 0.875rem;
+        color: #6b7280;
+        margin-bottom: 0.25rem;
+    }
+
+    .summary-value {
+        font-size: 2rem;
+        font-weight: 600;
+        color: #111827;
+        margin-bottom: 0.25rem;
+        line-height: 1;
+    }
+
+    .summary-extra {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+
+    .summary-icon {
+        width: 48px;
+        height: 48px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+
+    .assignment-card .summary-icon {
+        background-color: rgba(59, 130, 246, 0.1);
+        color: #3b82f6;
+    }
+
+    .review-card .summary-icon {
+        background-color: rgba(16, 185, 129, 0.1);
+        color: #10b981;
+    }
+
+    .deadline-card .summary-icon {
+        background-color: rgba(245, 158, 11, 0.1);
+        color: #f59e0b;
+    }
+
+    /* Priority Section */
+    .priority-section {
+        border-left: 4px solid #ef4444;
+        background-color: #fef2f2;
+    }
+
+    .priority-items {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .priority-item {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        background-color: white;
+        border-radius: 8px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    }
+
+    .priority-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        color: white;
+    }
+
+    .priority-item:nth-child(odd) .priority-icon {
+        background-color: #3b82f6;
+    }
+
+    .priority-item:nth-child(even) .priority-icon {
+        background-color: #10b981;
+    }
+
+    .priority-content {
+        flex: 1;
+    }
+
+    .priority-content h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .priority-action {
+        margin-left: 1rem;
+    }
+
+    /* Section Styles */
+    .dashboard-section {
+        background: white;
+        border-radius: 12px;
+        padding: 1.5rem;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        margin-bottom: 2rem;
+    }
+
+    .section-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+    }
+
+    .section-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        color: #2b2d42;
+        display: flex;
+        align-items: center;
+    }
+
+    .section-actions {
+        display: flex;
+        gap: 0.75rem;
+    }
+
+    /* Deadline Cards */
+    .deadline-cards {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .deadline-card {
+        display: flex;
+        align-items: center;
+        padding: 1rem;
+        border-radius: 8px;
+        background-color: white;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border-left: 4px solid #e5e7eb;
+    }
+
+    .deadline-card.urgent {
+        border-left: 4px solid #f59e0b;
+        background-color: #fffbeb;
+    }
+
+    .deadline-date {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        width: 60px;
+        margin-right: 1rem;
+    }
+
+    .deadline-date .day {
+        font-size: 1.5rem;
+        font-weight: 600;
+        line-height: 1;
+        color: #2b2d42;
+    }
+
+    .deadline-date .month {
+        font-size: 0.875rem;
+        text-transform: uppercase;
+        color: #6b7280;
+    }
+
+    .deadline-content {
+        flex: 1;
+    }
+
+    .deadline-content h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+
+    .deadline-meta {
+        display: flex;
+        align-items: center;
+        gap: 0.75rem;
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+
+    .deadline-actions {
+        margin-left: 1rem;
+    }
+
+    /* Review Cards */
+    .review-cards {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .review-card {
+        padding: 1rem;
+        border-radius: 8px;
+        background-color: white;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        border-left: 4px solid #e5e7eb;
+    }
+
+    .review-card.urgent {
+        border-left: 4px solid #f59e0b;
+        background-color: #fffbeb;
+    }
+
+    .review-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+
+    .review-header h3 {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 0;
+    }
+
+    .review-body {
+        margin-bottom: 0.5rem;
+    }
+
+    .review-meta {
+        font-size: 0.875rem;
+        color: #6b7280;
+    }
+
+    .review-actions {
+        display: flex;
+        justify-content: flex-end;
+    }
+
+    /* Table Styles */
+    .data-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+
+    .data-table thead th {
+        text-align: left;
+        padding: 0.75rem 1rem;
+        font-weight: 500;
+        color: #6b7280;
+        font-size: 0.875rem;
+        border-bottom: 1px solid #e5e7eb;
+    }
+
+    .data-table tbody td {
+        padding: 1rem;
+        border-bottom: 1px solid #f3f4f6;
+    }
+
+    .data-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .data-table tbody tr:hover {
+        background-color: #f9fafb;
+    }
+
+    .text-end {
+        text-align: right;
+    }
+
+    /* Status Badges */
+    .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+    .status-badge.completed {
+        background-color: #e6ffec;
+        color: #166534;
+    }
+
+    .status-badge.pending {
+        background-color: #fff8e6;
+        color: #854d0e;
+    }
+
+    /* Action Buttons */
+    .action-button {
+        display: inline-block;
+        padding: 0.375rem 0.75rem;
+        background-color: #2563eb;
+        color: white;
+        border-radius: 4px;
+        text-decoration: none;
+        font-size: 0.875rem;
+    }
+
+    .action-button:hover {
+        background-color: #1d4ed8;
+    }
+
+    /* Empty State */
+    .empty-state {
+        padding: 2rem;
+        text-align: center;
+        color: #6b7280;
+        background-color: #f9fafb;
+        border-radius: 8px;
+    }
+
+    .empty-state i {
+        font-size: 2rem;
+        margin-bottom: 1rem;
+        color: #d1d5db;
+    }
+
+    /* Text Colors */
+    .text-warning {
+        color: #b45309;
+    }
+
+    .text-danger {
+        color: #991b1b;
+    }
+
+    .text-success {
+        color: #166534;
+    }
+
+    /* Responsive Styles */
+    @media (max-width: 768px) {
+        .dashboard-container {
+            padding: 1rem;
+        }
+
+        .dashboard-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .summary-grid {
+            grid-template-columns: 1fr;
+        }
+
+        .section-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 1rem;
+        }
+
+        .section-actions {
+            width: 100%;
+            justify-content: flex-end;
+        }
+
+        .deadline-card,
+        .review-card,
+        .priority-item {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .deadline-actions,
+        .review-actions,
+        .priority-action {
+            margin-left: 0;
+            margin-top: 1rem;
+            width: 100%;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .data-table {
+            display: block;
+            overflow-x: auto;
+        }
+    }
+</style>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize tooltips
+    const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+    tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl);
+    });
+
+    // Add confirmation before leaving page with unsaved changes
+    const forms = document.querySelectorAll('form');
+    let formChanged = false;
+    
+    forms.forEach(form => {
+        form.querySelectorAll('input, textarea, select').forEach(element => {
+            element.addEventListener('change', () => formChanged = true);
+            element.addEventListener('input', () => formChanged = true);
+        });
+    });
+    
+    window.addEventListener('beforeunload', (e) => {
+        if (formChanged) {
+            e.preventDefault();
+            e.returnValue = '';
+        }
+    });
+});
+</script>
+{% endblock %}

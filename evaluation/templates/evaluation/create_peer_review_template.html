@@ -1,0 +1,232 @@
+{% extends "evaluation/base.html" %}
+{% block content %}
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-1">Create Peer Review Template</h2>
+            <p class="text-muted mb-0">For: {{ assignment.title }} ({{ assignment.course.name }})</p>
+        </div>
+        <a href="{% url 'peer_review_dashboard' %}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+        </a>
+    </div>
+
+    <div class="card shadow-sm mb-4">
+        <div class="card-body">
+            <h5 class="card-title mb-3">
+                <i class="bi bi-gear me-2"></i>Template Settings
+            </h5>
+            <form method="get" class="row g-3 align-items-center">
+                <div class="col-auto">
+                    <label for="num_questions" class="col-form-label">Number of Questions:</label>
+                </div>
+                <div class="col-auto">
+                    <input type="number" class="form-control" min="1" max="20" 
+                           name="num_questions" id="num_questions" value="{{ num_questions }}">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-primary">Update</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <form method="post" enctype="multipart/form-data" class="needs-validation" novalidate>
+        {% csrf_token %}
+        
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title mb-3">
+                    <i class="bi bi-toggle-on me-2"></i>Review Configuration
+                </h5>
+                <div class="row g-3">
+                    <div class="col-md-6">
+                        <div class="form-check form-switch">
+                            {{ template_form.enable_peer_review }}
+                            <label class="form-check-label" for="{{ template_form.enable_peer_review.id_for_label }}">
+                                Enable Peer Review
+                            </label>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <label for="{{ template_form.copies_per_student.id_for_label }}" class="form-label">
+                            Reviews Per Student
+                        </label>
+                        {{ template_form.copies_per_student }}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title mb-3">
+                    <i class="bi bi-file-pdf me-2"></i>Reference Materials
+                </h5>
+                <div class="d-flex align-items-center">
+                    {% if assignment.solution_pdf %}
+                        <a href="{{ assignment.solution_pdf.url }}" target="_blank" class="btn btn-outline-primary me-3">
+                            <i class="bi bi-eye me-1"></i> View Solution PDF
+                        </a>
+                        <small class="text-muted">Available for students during review</small>
+                    {% else %}
+                        <span class="text-muted">No solution PDF uploaded</span>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title mb-3">
+                    <i class="bi bi-file-earmark-pdf me-2"></i>Rubric PDF
+                </h5>
+                <div class="mb-3">
+                    <label for="{{ template_form.rubric_pdf.id_for_label }}" class="form-label">Rubric PDF (optional)</label>
+                    {{ template_form.rubric_pdf }}
+                    {% if template_form.instance.rubric_pdf %}
+                        <a href="{{ template_form.instance.rubric_pdf.url }}" target="_blank">View Rubric PDF</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title mb-4">
+                    <i class="bi bi-question-circle me-2"></i>Review Questions
+                </h5>
+                
+                {{ question_formset.management_form }}
+                <div class="questions-container">
+                    {% for form in question_formset %}
+                    <div class="question-card card mb-3 p-3">
+                        <div class="question-header d-flex justify-content-between align-items-center mb-2">
+                            <h6 class="mb-0">Question {{ forloop.counter }}</h6>
+                            {% if form.errors %}
+                                <span class="badge bg-danger">Fix errors</span>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.text.id_for_label }}" class="form-label">Question Text</label>
+                            {{ form.text }}
+                            <div class="form-text">What students will see when reviewing</div>
+                        </div>
+                        
+                        <div class="row g-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.max_marks.id_for_label }}" class="form-label">Maximum Points</label>
+                                {{ form.max_marks }}
+                            </div>
+                            <div class="col-md-6">
+                                <label for="{{ form.rubric.id_for_label }}" class="form-label">Scoring Rubric</label>
+                                {{ form.rubric }}
+                                <div class="form-text">Guidance for reviewers</div>
+                            </div>
+                        </div>
+                        
+                        {% if form.errors %}
+                        <div class="alert alert-danger mt-3">
+                            {% for field, errors in form.errors.items %}
+                                {% for error in errors %}
+                                    <div>{{ error }}</div>
+                                {% endfor %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <h5 class="card-title mb-3">
+                    <i class="bi bi-calendar me-2"></i>Peer Review Deadline
+                </h5>
+                <div>
+                    <strong>{{ assignment.peer_review_deadline|date:"D, d M Y H:i" }}</strong>
+                </div>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end mt-4">
+            <button type="submit" class="btn btn-primary px-4">
+                <i class="bi bi-save me-2"></i> Save Template
+            </button>
+            <a href="{% url 'peer_review_dashboard' %}" class="btn btn-outline-secondary px-4 ms-2">
+                Cancel
+            </a>
+        </div>
+    </form>
+</div>
+
+<style>
+    .question-card {
+        border-left: 4px solid #4361ee;
+        transition: all 0.2s ease;
+    }
+    
+    .question-card:hover {
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    
+    .form-switch .form-check-input {
+        width: 3em;
+        height: 1.5em;
+    }
+    
+    textarea {
+        min-height: 100px;
+    }
+    
+    .questions-container {
+        max-height: 600px;
+        overflow-y: auto;
+        padding-right: 0.5rem;
+    }
+    
+    /* Custom scrollbar */
+    .questions-container::-webkit-scrollbar {
+        width: 8px;
+    }
+    
+    .questions-container::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+    
+    .questions-container::-webkit-scrollbar-thumb {
+        background: #c1c1c1;
+        border-radius: 10px;
+    }
+    
+    .questions-container::-webkit-scrollbar-thumb:hover {
+        background: #a1a1a1;
+    }
+</style>
+
+<script>
+    // Add confirmation before leaving page with unsaved changes
+    document.addEventListener('DOMContentLoaded', function() {
+        const form = document.querySelector('form');
+        let formChanged = false;
+        
+        // Detect form changes
+        form.querySelectorAll('input, textarea, select').forEach(element => {
+            element.addEventListener('change', () => formChanged = true);
+            element.addEventListener('input', () => formChanged = true);
+        });
+        
+        // Warn before leaving
+        window.addEventListener('beforeunload', (e) => {
+            if (formChanged) {
+                e.preventDefault();
+                e.returnValue = '';
+            }
+        });
+    });
+</script>
+{% endblock %}

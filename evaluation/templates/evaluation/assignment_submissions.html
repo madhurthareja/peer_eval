@@ -1,0 +1,43 @@
+<!-- filepath: /Users/madhurthareja/itachicmd/peer-evaluation-system/peer_eval/evaluation/templates/evaluation/assignment_submission.html -->
+{% extends "evaluation/base.html" %}
+{% block content %}
+<div class="container py-4">
+    <h2 class="mb-4">Submissions for: {{ assignment.title }}</h2>
+    <div class="mb-3">
+        <strong>Course:</strong> {{ assignment.course.name }}<br>
+        <strong>Deadline:</strong> {{ assignment.deadline|date:"D, d M Y H:i" }}
+    </div>
+    <table class="table table-striped">
+        <thead>
+            <tr>
+                <th>Student</th>
+                <th>Roll No</th>
+                <th>Email</th>
+                <th>Submitted At</th>
+                <th>PDF</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for submission in submissions %}
+            <tr>
+                <td>{{ submission.student.user.get_full_name|default:submission.student.user.username }}</td>
+                <td>{{ submission.student.roll_no }}</td>
+                <td>{{ submission.student.user.email }}</td>
+                <td>{{ submission.submitted_at|date:"D, d M Y H:i" }}</td>
+                <td>
+                    <a href="{{ submission.pdf.url }}" target="_blank" class="btn btn-sm btn-primary">View PDF</a>
+                    <form action="{% url 'delete_submission' submission.id %}" method="post" style="display:inline;" onsubmit="return confirm('Are you sure you want to delete this submission?');">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-sm btn-danger">Delete</button>
+                    </form>
+                </td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="5">No submissions yet.</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

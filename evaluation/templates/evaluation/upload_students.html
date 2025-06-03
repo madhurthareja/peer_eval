@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Upload Students</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body>
+    <div>
+        {% extends "evaluation/base.html" %}
+        {% block content %}
+            <h1 class="text-2xl font-bold mb-4">Upload Students CSV</h1>
+            <div class="alert alert-info mb-3">
+                Use this page for the bulk upload of students to a course.<br>
+                <strong>Sample CSV format:</strong>
+                <pre class="bg-light p-2 rounded mt-2 mb-0" style="font-size: 0.95em;">
+username,email,first_name,last_name,roll_no
+john123,john@example.com,John,Doe,1001
+jane456,jane@example.com,Jane,Smith,1002
+                </pre>
+                <span class="text-muted">The first row must be the header with these column names.</span>
+            </div>
+            {% if messages %}
+                <div class="mb-4">
+                    {% for message in messages %}
+                        <div class="alert alert-{{ message.tags }} mt-2">{{ message }}</div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <div class="mb-3">
+                    <label for="course_id" class="form-label">Course</label>
+                    <select name="course_id" id="course_id" class="form-select" required>
+                        {% for course in courses %}
+                            <option value="{{ course.id }}">{{ course.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label for="csv_file" class="form-label">CSV File</label>
+                    <input type="file" name="csv_file" id="csv_file" class="form-control" accept=".csv" required>
+                </div>
+                <button type="submit" class="btn btn-primary">Upload</button>
+            </form>
+        {% endblock %}
+    </div>
+</body>
+</html>

@@ -1,0 +1,57 @@
+{% extends "evaluation/base.html" %}
+{% block content %}
+<div class="container py-4">
+    <h2>Manage Results</h2>
+    <p class="text-muted">Select an assignment to view peer evaluation results and analysis.</p>
+
+    <div class="table-responsive mt-4">
+        <table class="table table-hover align-middle">
+            <thead class="table-light">
+                <tr>
+                    <th>Assignment</th>
+                    <th>Course</th>
+                    <th>Deadline</th>
+                    <th>Status</th>
+                    <th>Submissions</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for assignment in assignments %}
+                <tr>
+                    <td>{{ assignment.title }}</td>
+                    <td>{{ assignment.course.name }}</td>
+                    <td>{{ assignment.deadline|date:"M j, Y H:i" }}</td>
+                    <td>
+                        {% if assignment.results_published %}
+                            <span class="badge bg-success">Published</span>
+                        {% else %}
+                            <span class="badge bg-secondary">Not Published</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ assignment.submissions.count }}</td>
+                    <td>
+                        <a href="{% url 'assignment_results' assignment.id %}" class="btn btn-outline-primary btn-sm">
+                            View Results
+                        </a>
+                        {% if not assignment.results_published %}
+                            <a href="{% url 'publish_results' assignment.id %}" class="btn btn-success btn-sm ms-2">
+                                Publish
+                            </a>
+                        {% else %}
+                            <a href="{% url 'unpublish_results' assignment.id %}" class="btn btn-warning btn-sm ms-2">
+                                Unpublish
+                            </a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% empty %}
+                <tr>
+                    <td colspan="6" class="text-center text-muted">No assignments found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

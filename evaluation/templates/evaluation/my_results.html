@@ -1,0 +1,55 @@
+{% extends "evaluation/base.html" %}
+{% load dict_extras %}
+{% block content %}
+<div class="container py-4">
+    <h2>My Results</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>Assignment</th>
+                <th>Score</th>
+                <th>Feedback</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for submission in submissions %}
+            <tr>
+                <td>{{ submission.assignment.title }}</td>
+                <td>
+                    {% with reviews=submission.peer_reviews.all %}
+                        {% if reviews %}
+                            {{ reviews|average:"overall_score"|default:"0"|floatformat:1 }}
+                        {% else %}
+                            <span class="text-muted">N/A</span>
+                        {% endif %}
+                    {% endwith %}
+                </td>
+                <td>
+                    {% for review in submission.peer_reviews.all %}
+                        <div class="review-item mb-3">
+                            <strong>Anonymous Reviewer</strong><br>
+                            <strong>Overall Score:</strong> {{ review.overall_score|default:"0" }}/{{ review.answers.all|sum_max_marks }}<br>
+                            
+                            <div class="mt-2">
+                                {% for answer in review.answers.all %}
+                                    <div class="answer-item">
+                                        <strong>{{ answer.question.text }}:</strong>
+                                        {{ answer.marks }} marks
+                                        {% if answer.comment %}
+                                            <br><em>"{{ answer.comment }}"</em>
+                                        {% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <hr>
+                        </div>
+                    {% empty %}
+                        <span class="text-muted">No Reviews</span>
+                    {% endfor %}
+                </td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+{% endblock %}

@@ -1,0 +1,392 @@
+{% extends "evaluation/base.html" %}
+{% block content %}
+<div class="dashboard-container">
+    <!-- Header Section -->
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">Welcome, {{ user.get_full_name|default:user.username }}</h1>
+        <p class="dashboard-subtitle">Teacher Dashboard</p>
+        {% if messages %}
+        <div class="notifications">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">
+                {{ message }}
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="summary-grid">
+        <div class="summary-card">
+            <div class="summary-content">
+                <span class="summary-label">Courses</span>
+                <span class="summary-value">{{ courses|length }}</span>
+            </div>
+            <div class="summary-icon">
+                <i class="bi bi-book"></i>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-content">
+                <span class="summary-label">Assignments</span>
+                <span class="summary-value">{{ assignments|length }}</span>
+            </div>
+            <div class="summary-icon">
+                <i class="bi bi-journal-text"></i>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-content">
+                <span class="summary-label">Students</span>
+                <span class="summary-value">{{ total_students }}</span>
+            </div>
+            <div class="summary-icon">
+                <i class="bi bi-people"></i>
+            </div>
+        </div>
+        <div class="summary-card">
+            <div class="summary-content">
+                <span class="summary-label">Pending Reviews</span>
+                <span class="summary-value">{{ pending_reviews }}</span>
+                <a href="{% url 'peer_review_dashboard' %}" class="summary-link">Review now</a>
+            </div>
+            <div class="summary-icon">
+                <i class="bi bi-clipboard-check"></i>
+            </div>
+        </div>
+    </div>
+
+    <!-- Analytics Section -->
+    <div class="dashboard-section">
+        <div class="section-header">
+            <h2 class="section-title">Submission Analytics</h2>
+        </div>
+        <div class="chart-container">
+            <canvas id="submissionsChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Courses Section -->
+    <div class="dashboard-section">
+        <div class="section-header">
+            <h2 class="section-title">Your Courses</h2>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Course</th>
+                        <th>Code</th>
+                        <th>Students</th>
+                        <th>Active Assignments</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for course in courses %}
+                    <tr>
+                        <td>{{ course.name }}</td>
+                        <td>{{ course.code|default:"-" }}</td>
+                        <td>{{ course.students.count }}</td>
+                        <td>{{ course.active_assignments.count }}</td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center py-4 text-muted">
+                            <i class="bi bi-book" style="font-size: 2rem;"></i>
+                            <p class="mt-2">No courses found. Add your first course to get started.</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <!-- Add Course Section -->
+        <div class="collapse mb-3" id="addCourseForm">
+            <form method="post" class="row g-2">
+                {% csrf_token %}
+                <div class="col-auto">
+                    <input type="text" name="course_name" class="form-control" placeholder="Course Name" required>
+                </div>
+                <div class="col-auto">
+                    <input type="text" name="course_code" class="form-control" placeholder="Course Code (optional)">
+                </div>
+                <div class="col-auto">
+                    <button type="submit" class="btn btn-success">Create</button>
+                </div>
+            </form>
+        </div>
+        <button class="btn btn-primary mb-3" type="button" data-bs-toggle="collapse" data-bs-target="#addCourseForm" aria-expanded="false" aria-controls="addCourseForm">
+            Add Course
+        </button>
+    </div>
+
+    <!-- Update Password Section -->
+    <div class="dashboard-section">
+        <div class="section-header">
+            <h2 class="section-title">Update Password</h2>
+        </div>
+        <a href="{% url 'update_password' user.id %}" class="btn btn-sm btn-warning">Update Your Password</a>
+    </div>
+</div>
+
+<!-- Chart.js Script (unchanged) -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('submissionsChart').getContext('2d');
+    const chart = new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: {{ chart_labels|safe }},
+            datasets: [{
+                label: 'Submissions',
+                data: {{ chart_data|safe }},
+                borderColor: '#4361ee',
+                backgroundColor: 'rgba(67, 97, 238, 0.1)',
+                borderWidth: 2,
+                tension: 0.3,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        stepSize: 1
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+
+<style>
+.dashboard-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.dashboard-header {
+    margin-bottom: 2rem;
+}
+
+.dashboard-title {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #2b2d42;
+    margin-bottom: 0.5rem;
+}
+
+.dashboard-subtitle {
+    color: #6b7280;
+    font-size: 1rem;
+}
+
+.notifications {
+    margin-top: 1.5rem;
+}
+
+.alert {
+    padding: 0.75rem 1.25rem;
+    border-radius: 0.375rem;
+    margin-bottom: 1rem;
+}
+
+.alert-success {
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #166534;
+}
+
+.alert-info {
+    background-color: #f0f9ff;
+    border: 1px solid #bae6fd;
+    color: #0369a1;
+}
+
+.alert-warning {
+    background-color: #fefce8;
+    border: 1px solid #fef08a;
+    color: #854d0e;
+}
+
+.alert-error {
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+}
+
+.summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+}
+
+.summary-card {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s ease;
+}
+
+.summary-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.summary-content {
+    display: flex;
+    flex-direction: column;
+}
+
+.summary-label {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-bottom: 0.25rem;
+}
+
+.summary-value {
+    font-size: 1.75rem;
+    font-weight: 600;
+    color: #111827;
+    margin-bottom: 0.25rem;
+}
+
+.summary-link {
+    font-size: 0.875rem;
+    color: #3b82f6;
+    text-decoration: none;
+}
+
+.summary-link:hover {
+    text-decoration: underline;
+}
+
+.summary-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background-color: rgba(67, 97, 238, 0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #4361ee;
+    font-size: 1.25rem;
+}
+
+.dashboard-section {
+    background: white;
+    border-radius: 0.5rem;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-bottom: 2rem;
+}
+
+.section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+}
+
+.section-title {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #2b2d42;
+}
+
+.section-actions {
+    display: flex;
+    gap: 0.75rem;
+}
+
+.chart-container {
+    height: 300px;
+    margin-top: 1rem;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.data-table thead th {
+    text-align: left;
+    padding: 0.75rem 1rem;
+    font-weight: 500;
+    color: #6b7280;
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    border-bottom: 1px solid #e5e7eb;
+}
+
+.data-table tbody td {
+    padding: 1rem;
+    border-bottom: 1px solid #f3f4f6;
+}
+
+.data-table tbody tr:hover {
+    background-color: #f9fafb;
+}
+
+.text-link {
+    color: #3b82f6;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.text-link:hover {
+    text-decoration: underline;
+}
+
+.dropdown-menu {
+    border: none;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    border-radius: 0.375rem;
+}
+
+.dropdown-item {
+    padding: 0.5rem 1rem;
+    font-size: 0.875rem;
+}
+
+.dropdown-item:hover {
+    background-color: #f3f4f6;
+}
+
+@media (max-width: 768px) {
+    .dashboard-container {
+        padding: 1rem;
+    }
+    
+    .section-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .data-table {
+        display: block;
+        overflow-x: auto;
+    }
+}
+</style>
+{% endblock %}
