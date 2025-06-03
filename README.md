@@ -7,13 +7,9 @@ Follow the instructions below to set up, configure, and deploy the project.
 
 ## 🎬 Project Preview
 
-[![Demo Video](https://img.icons8.com/ios-filled/100/000000/play-button-circled.png)](https://github.com/madhurthareja/peer_eval/blob/main/Demo.mp4)
+You can watch a demo of the project here:
 
-Click the image above or [watch the demo video](https://github.com/madhurthareja/peer_eval/blob/main/Demo.mp4).
-
----
-
-## 🚀 Local Development Setup
+[![Watch the demo]](https://youtu.be/6OE4hhoTwdg)
 
 ### 1. **Clone the Repository**
 
